@@ -107,14 +107,15 @@ def sync_shopify(inventory):
         print("No matching SKUs found.", flush=True)
         return
 
-    print(f"Syncing {len(items_to_set):,} wheels to Shopify ATD Warehouse...", flush=True)
-    for i in range(0, len(items_to_set), 100):
-        batch = items_to_set[i:i+100]
+    print(f"Activating and syncing {len(items_to_set):,} wheels to Shopify ATD Warehouse...", flush=True)
+    for item in items_to_set:
         shopify_graphql_request("""
-            mutation inventorySetOnHandQuantities($input: InventorySetOnHandQuantitiesInput!) {
-              inventorySetOnHandQuantities(input: $input) { userErrors { message } }
+            mutation activateAndSet($inventoryItemId: ID!, $locationId: ID!, $quantity: Int!) {
+              inventoryActivate(inventoryItemId: $inventoryItemId, locationId: $locationId, onHandQuantity: $quantity) {
+                userErrors { field message }
+              }
             }
-        """, {"input": {"reason": "correction", "setQuantities": batch}})
+        """, {'inventoryItemId': item['inventoryItemId'], 'locationId': SHOPIFY_LOCATION_ID, 'quantity': item['quantity']})
     print("Shopify inventory sync complete.", flush=True)
 
 
